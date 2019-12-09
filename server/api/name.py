@@ -1,8 +1,6 @@
 import emoji
-import blocksmith
 import random
 import hashlib
-from flask import abort
 from flask_restful import Resource, reqparse
 from generator import KeyGenerator
 from tinydb import Query
@@ -36,17 +34,17 @@ emojiParser.add_argument('emojis', type=str)
 
 
 class NameAPI(Resource):
+    def options(self):
+        pass
 
     def post(self):
         args = nameParser.parse_args()
         name = args['name']
         if name is None:
-            abort(400)
+            return ("No name in post data", 400)
 
         emojis = generate_emojis()
         private_key = get_private_key_from_emojis(emojis)
-        print(get_private_key_from_emojis(emojis))
-        print(get_private_key_from_emojis(emojis))
         pk_hash = get_pk_hash(private_key)
         table.insert({'name': name, 'hash': pk_hash})
 
@@ -56,13 +54,13 @@ class NameAPI(Resource):
         args = emojiParser.parse_args()
         emojis = args['emojis']
         if emojis is None:
-            abort(400)
+            return ("No emojis in query data", 400)
 
         private_key = get_private_key_from_emojis(emojis)
         pk_hash = get_pk_hash(private_key)
         Name = Query()
         res = table.search(Name['hash'] == pk_hash)
         if len(res) != 1:
-            abort(400)
+            return ("Cannot find name for the emojis", 400)
 
         return (res[0], 201)
